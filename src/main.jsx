@@ -7,14 +7,14 @@ const QUEUE_KEY = 'vabulous_inventory_queue_v1';
 const PLATFORM_OPTIONS = ['WhatNot', 'eBay', 'Depop', 'Etsy', 'FBMP', 'Mercari', 'Poshmark', 'Shopify', 'TikTok', 'Other'];
 
 const fields = [
-  ['isbn', 'ISBN'], ['location', 'Location'], ['title', 'Title'], ['author', 'Author'],
-  ['publisher', 'Publisher'], ['year', 'Year'], ['edition', 'Edition'],
-  ['condition', 'Condition'], ['binding', 'Binding'],
-  ['signed', 'Signed'], ['source', 'Source'],
-  ['dateListed', 'Date Listed'],
-  ['purchasePrice', 'Purchase Price'], ['listingPrice', 'Listing Price'],
-  ['soldPrice', 'Sold Price'], ['photoStart', 'Beginning Photo Number'],
-  ['photoEnd', 'Ending Photo Number'], ['notes', 'Notes']
+  ['isbn', 'ISBN'], ['location', 'Location'], ['__weight__', 'Weight'],
+  ['title', 'Title'], ['author', 'Author'], ['publisher', 'Publisher'],
+  ['year', 'Year'], ['edition', 'Edition'], ['condition', 'Condition'],
+  ['binding', 'Binding'], ['signed', 'Signed'], ['source', 'Source'],
+  ['dateListed', 'Date Listed'], ['purchasePrice', 'Purchase Price'],
+  ['listingPrice', 'Listing Price'], ['soldPrice', 'Sold Price'],
+  ['photoStart', 'Beginning Photo Number'], ['photoEnd', 'Ending Photo Number'],
+  ['__platforms__', 'Platforms'], ['notes', 'Notes']
 ];
 
 function load(key, fallback) {
@@ -82,7 +82,27 @@ function App() {
       <section className="card"><div className="sku"><span>Next SKU</span><strong>{sku}</strong></div></section>
       <form className="card form" onSubmit={submit}>
         <div className="grid">
-          {fields.map(([k,label]) => k==='notes' ? <label className="wide" key={k}>{label}<textarea value={form[k]||''} onChange={e=>update(k,e.target.value)} /></label> :
+          {fields.map(([k,label]) =>
+            k==='__weight__' ? <fieldset className="wide compact-fieldset" key={k}>
+              <legend>{label}</legend>
+              <div className="weight-grid">
+                <label>Pounds<input type="number" min="0" step="1" value={form.weightPounds||''} onChange={e=>update('weightPounds',e.target.value)} /></label>
+                <label>Ounces<input type="number" min="0" max="15" step="1" value={form.weightOunces||''} onChange={e=>update('weightOunces',e.target.value)} /></label>
+              </div>
+            </fieldset> :
+            k==='__platforms__' ? <fieldset className="wide compact-fieldset" key={k}>
+              <legend>{label}</legend>
+              <div className="platform-checklist">
+                {PLATFORM_OPTIONS.map(platform => <label className="check-option" key={platform}>
+                  <input type="checkbox" checked={(form.platforms||[]).includes(platform)} onChange={e=>{
+                    const current=form.platforms||[];
+                    update('platforms', e.target.checked ? [...current,platform] : current.filter(p=>p!==platform));
+                  }} />
+                  <span>{platform}</span>
+                </label>)}
+              </div>
+            </fieldset> :
+            k==='notes' ? <label className="wide" key={k}>{label}<textarea value={form[k]||''} onChange={e=>update(k,e.target.value)} /></label> :
             k==='signed' ? <label key={k}>{label}<select value={form[k]||''} onChange={e=>update(k,e.target.value)}><option value="">Select</option><option>Yes</option><option>No</option></select></label> :
             k==='condition' ? <label key={k}>{label}<select value={form[k]||''} onChange={e=>update(k,e.target.value)}>
               <option value="">Select condition</option>
@@ -95,26 +115,8 @@ function App() {
               <option>Leather</option><option>Bonded Leather</option><option>Cloth</option><option>Boards</option>
               <option>Spiral Bound</option><option>Stapled Wraps</option><option>Pamphlet</option><option>Other</option>
             </select></label> :
-            <label className={['title','author','publisher'].includes(k)?'wide':''} key={k}>{label}{k==='title' && ' *'}<input type={['purchasePrice','listingPrice','soldPrice','photoStart','photoEnd'].includes(k)?'number':k==='dateListed'?'date':'text'} step={['purchasePrice','listingPrice','soldPrice'].includes(k)?'0.01':'1'} value={form[k]||''} onChange={e=>update(k,e.target.value)} /></label>)}
-          <fieldset className="wide compact-fieldset">
-            <legend>Weight</legend>
-            <div className="weight-grid">
-              <label>Pounds<input type="number" min="0" step="1" value={form.weightPounds||''} onChange={e=>update('weightPounds',e.target.value)} /></label>
-              <label>Ounces<input type="number" min="0" max="15" step="1" value={form.weightOunces||''} onChange={e=>update('weightOunces',e.target.value)} /></label>
-            </div>
-          </fieldset>
-          <fieldset className="wide compact-fieldset">
-            <legend>Platforms</legend>
-            <div className="platform-checklist">
-              {PLATFORM_OPTIONS.map(platform => <label className="check-option" key={platform}>
-                <input type="checkbox" checked={(form.platforms||[]).includes(platform)} onChange={e=>{
-                  const current=form.platforms||[];
-                  update('platforms', e.target.checked ? [...current,platform] : current.filter(p=>p!==platform));
-                }} />
-                <span>{platform}</span>
-              </label>)}
-            </div>
-          </fieldset>
+            <label className={['title','author','publisher'].includes(k)?'wide':''} key={k}>{label}{k==='title' && ' *'}<input type={['purchasePrice','listingPrice','soldPrice','photoStart','photoEnd'].includes(k)?'number':k==='dateListed'?'date':'text'} step={['purchasePrice','listingPrice','soldPrice'].includes(k)?'0.01':'1'} value={form[k]||''} onChange={e=>update(k,e.target.value)} /></label>
+          )}
         </div>
         <button className="primary" type="submit">Save Book</button>
       </form>
