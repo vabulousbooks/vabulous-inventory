@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#171717" />
+<title>Vabulous Books Inventory — Prototype</title>
+<style>
+:root{--ink:#171717;--paper:#fbf7ee;--panel:#fff;--muted:#6b675f;--line:#d9d1c4;--accent:#8b5e34;--good:#2f6f4e;--warn:#9a6317;--danger:#9c2f2f;--radius:16px}
+*{box-sizing:border-box} body{margin:0;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--paper);color:var(--ink)}
+button,input,select,textarea{font:inherit}.app{max-width:940px;margin:auto;padding:14px 14px 90px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 2px 16px}.brand h1{font-family:Georgia,serif;font-size:24px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}.badge{background:var(--ink);color:white;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:700}
+nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;position:sticky;top:0;background:rgba(251,247,238,.94);backdrop-filter:blur(10px);z-index:20;padding:8px 0 12px}.tab{border:1px solid var(--line);background:white;border-radius:12px;padding:10px;font-weight:700}.tab.active{background:var(--ink);color:white;border-color:var(--ink)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:0 4px 18px rgba(0,0,0,.04);margin-bottom:14px}.card h2{font-family:Georgia,serif;margin:0 0 12px;font-size:20px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;margin-bottom:5px;color:#4e4a43}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px;background:#fff;color:var(--ink)}textarea{min-height:84px;resize:vertical}.inline{display:flex;gap:8px;align-items:center}.inline>*:first-child{flex:1}.btn{border:0;border-radius:12px;padding:12px 14px;font-weight:800;cursor:pointer}.primary{background:var(--ink);color:white}.secondary{background:#eee7dc;color:var(--ink)}.outline{background:white;border:1px solid var(--line)}.danger{background:#f9e7e7;color:var(--danger)}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.status{padding:10px 12px;border-radius:12px;background:#eef7f1;color:var(--good);font-weight:700;font-size:13px;display:none}.status.show{display:block}.queue-dots{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0}.dot{height:34px;border-radius:9px;border:2px solid var(--line);display:grid;place-items:center;color:var(--muted);font-weight:800}.dot.filled{background:var(--good);border-color:var(--good);color:white}.queue-title{display:flex;align-items:end;justify-content:space-between;gap:8px}.queue-count{font-size:28px;font-weight:900}.small{font-size:12px;color:var(--muted)}.inventory-list{display:grid;gap:9px}.book-row{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:8px}.book-title{font-weight:900}.meta{color:var(--muted);font-size:12px;margin-top:3px}.row-actions{display:flex;gap:6px;align-items:center}.mini{padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:white;font-weight:700}.empty{padding:28px;text-align:center;color:var(--muted)}.notice{background:#fff8df;border:1px solid #ead59a;color:#6f5210;border-radius:12px;padding:12px;font-size:13px;margin-bottom:12px}.hidden{display:none!important}
+@media(max-width:640px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.app{padding-left:10px;padding-right:10px}.brand h1{font-size:21px}.queue-dots{gap:5px}.dot{height:28px}}
+/* Print sheet: 2 columns × 3 rows on US Letter */
+#printArea{display:none}
+@media print{
+ @page{size:letter portrait;margin:0}
+ body{background:white}
+ .app{display:none!important}
+ #printArea{display:grid!important;width:8.5in;height:11in;grid-template-columns:4.25in 4.25in;grid-template-rows:repeat(3,3.6666667in);margin:0;padding:0}
+ .print-card{width:4.25in;height:3.6666667in;padding:.17in .20in;border:.25pt solid #bbb;overflow:hidden;position:relative;font-family:Arial,sans-serif;page-break-inside:avoid}
+ .pc-sku{font-size:10pt;font-weight:900;letter-spacing:.04em;border-bottom:1.2pt solid #111;padding-bottom:.05in;margin-bottom:.06in;display:flex;justify-content:space-between}.pc-title{font-family:Georgia,serif;font-weight:900;font-size:14pt;line-height:1.06;max-height:.48in;overflow:hidden;margin-bottom:.04in}.pc-author{font-size:10.5pt;font-weight:700;margin-bottom:.07in}.pc-line{font-size:8.6pt;line-height:1.28;margin:.025in 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pc-label{font-weight:800}.pc-notes{font-size:7.8pt;line-height:1.2;height:.35in;overflow:hidden;margin-top:.04in;border-top:.5pt solid #aaa;padding-top:.035in}.pc-code{position:absolute;bottom:.12in;left:.2in;right:.2in;height:.34in;display:flex;align-items:end;gap:1px}.bar{background:#111;height:100%;display:block}.code-text{position:absolute;bottom:.03in;left:0;right:0;text-align:center;font-size:6.5pt;letter-spacing:.11em}.blank-card{border:.25pt solid #ddd}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar"><div class="brand"><h1>Vabulous Books Inventory</h1><p>Prototype 1 · saves locally on this device</p></div><span class="badge">VB</span></header>
+  <nav><button class="tab active" data-view="add">Add Book</button><button class="tab" data-view="queue">Print Queue</button><button class="tab" data-view="inventory">Inventory</button></nav>
+
+  <section id="view-add">
+    <div class="notice">Prototype test: records stay in this browser until you export them. Use <b>Export CSV</b> regularly.</div>
+    <div class="card"><h2>Add a book</h2><div id="saveStatus" class="status"></div>
+      <form id="bookForm">
+        <div class="grid">
+          <div><label>SKU</label><input id="sku" readonly /></div>
+          <div><label>ISBN</label><div class="inline"><input id="isbn" inputmode="numeric" placeholder="Scan or enter"/><button type="button" id="scanBtn" class="btn secondary">Scan</button></div></div>
+          <div class="full"><label>Title *</label><input id="title" required /></div>
+          <div><label>Author</label><input id="author" /></div>
+          <div><label>Publisher</label><input id="publisher" /></div>
+          <div><label>Year</label><input id="year" inputmode="numeric" /></div>
+          <div><label>Edition</label><input id="edition" placeholder="First edition, later printing…" /></div>
+          <div><label>Binding</label><select id="binding"><option value="">Select</option><option>Hardcover</option><option>Hardcover with dust jacket</option><option>Paperback</option><option>Leather</option><option>Bonded leather</option><option>Cloth</option><option>Boards</option><option>Spiral / comb</option><option>Other</option></select></div>
+          <div><label>Condition</label><select id="condition"><option value="">Select</option><option>Fine</option><option>Near Fine</option><option>Very Good</option><option>Good</option><option>Fair</option><option>Poor</option></select></div>
+          <div><label>Dust Jacket</label><select id="dustJacket"><option value="">Not specified</option><option>Yes</option><option>No</option><option>Not issued</option></select></div>
+          <div><label>Signed</label><select id="signed"><option>No</option><option>Yes</option><option>Inscribed</option></select></div>
+          <div><label>Location</label><input id="location" placeholder="Shelf / bin" /></div>
+          <div><label>Weight</label><input id="weight" placeholder="1 lb 8 oz" /></div>
+          <div><label>Source</label><input id="source" placeholder="Estate sale, thrift…" /></div>
+          <div><label>Purchase Price</label><input id="purchasePrice" inputmode="decimal" type="number" step="0.01" /></div>
+          <div><label>Listing Price</label><input id="listingPrice" inputmode="decimal" type="number" step="0.01" /></div>
+          <div class="full"><label>Notes</label><textarea id="notes"></textarea></div>
+        </div>
+        <div class="actions"><button class="btn primary" type="submit">Save Book & Add to Queue</button><button class="btn outline" type="button" id="resetBtn">Clear Form</button></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="view-queue" class="hidden">
+    <div class="card"><div class="queue-title"><div><h2>Print queue</h2><div class="small">A sheet is ready after 6 books.</div></div><div class="queue-count"><span id="queueCount">0</span>/6</div></div>
+      <div class="queue-dots" id="queueDots"></div>
+      <div id="queueList" class="inventory-list"></div>
+      <div class="actions"><button id="printBtn" class="btn primary">Print Current Sheet</button><button id="clearQueueBtn" class="btn danger">Clear Queue</button></div>
+    </div>
+  </section>
+
+  <section id="view-inventory" class="hidden">
+    <div class="card"><h2>Saved inventory</h2><div class="inline"><input id="search" placeholder="Search SKU, title, author, ISBN…"/><button id="exportBtn" class="btn secondary">Export CSV</button></div><div id="inventoryList" class="inventory-list" style="margin-top:12px"></div><div class="actions"><button id="eraseBtn" class="btn danger">Erase All Prototype Data</button></div></div>
+  </section>
+</div>
+<div id="printArea"></div>
+<script>
+const FIELDS=['TIMESTAMP','SKU','ISBN','LOCATION','TITLE','AUTHOR','PUBLISHER','YEAR','EDITION','CONDITION','BINDING','DUST JACKET','SIGNED','SOURCE','WEIGHT','DATE LISTED','PLATFORMS','PURCHASE PRICE','LISTING PRICE','SOLD PRICE','DATE SOLD','PROFIT','DAYS TO SELL','NOTES'];
+let books=JSON.parse(localStorage.getItem('vb_books')||'[]');
+let queue=JSON.parse(localStorage.getItem('vb_queue')||'[]');
+const $=id=>document.getElementById(id);
+function localDateParts(){const d=new Date();return {ymd:`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`,iso:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}}
+function nextSku(){const {ymd}=localDateParts();const prefix=`VB-${ymd}-`;const nums=books.map(b=>b.SKU||'').filter(s=>s.startsWith(prefix)).map(s=>parseInt(s.slice(-3),10)||0);return prefix+String((nums.length?Math.max(...nums):0)+1).padStart(3,'0')}
+function setSku(){ $('sku').value=nextSku() }
+function save(){localStorage.setItem('vb_books',JSON.stringify(books));localStorage.setItem('vb_queue',JSON.stringify(queue))}
+function val(id){return $(id).value.trim()}
+function showStatus(msg){const el=$('saveStatus');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3500)}
+$('bookForm').addEventListener('submit',e=>{e.preventDefault();const now=new Date();const b={
+ 'TIMESTAMP':now.toLocaleString(),'SKU':val('sku'),'ISBN':val('isbn'),'LOCATION':val('location'),'TITLE':val('title'),'AUTHOR':val('author'),'PUBLISHER':val('publisher'),'YEAR':val('year'),'EDITION':val('edition'),'CONDITION':val('condition'),'BINDING':val('binding'),'DUST JACKET':val('dustJacket'),'SIGNED':val('signed'),'SOURCE':val('source'),'WEIGHT':val('weight'),'DATE LISTED':'','PLATFORMS':'','PURCHASE PRICE':val('purchasePrice'),'LISTING PRICE':val('listingPrice'),'SOLD PRICE':'','DATE SOLD':'','PROFIT':'','DAYS TO SELL':'','NOTES':val('notes')};
+ books.push(b); if(queue.length<6) queue.push(b.SKU); save(); const hitSix=queue.length===6; e.target.reset();setSku();render();showStatus(hitSix?'Saved. Your 6-card sheet is ready to print.':'Saved. Added to print queue.'); if(hitSix) switchView('queue');
+});
+$('resetBtn').onclick=()=>{ $('bookForm').reset();setSku() };
+function switchView(name){document.querySelectorAll('[id^="view-"]').forEach(x=>x.classList.add('hidden'));$(`view-${name}`).classList.remove('hidden');document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===name)); if(name==='queue')renderQueue();if(name==='inventory')renderInventory()}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchView(t.dataset.view));
+function renderQueue(){ $('queueCount').textContent=queue.length; $('queueDots').innerHTML=Array.from({length:6},(_,i)=>`<div class="dot ${i<queue.length?'filled':''}">${i<queue.length?i+1:'·'}</div>`).join(''); const qbooks=queue.map(s=>books.find(b=>b.SKU===s)).filter(Boolean);$('queueList').innerHTML=qbooks.length?qbooks.map((b,i)=>`<div class="book-row"><div><div class="book-title">${esc(b.TITLE||'Untitled')}</div><div class="meta">${esc(b.SKU)} · ${esc(b.AUTHOR||'No author')}</div></div><div class="row-actions"><button class="mini" onclick="removeQueue(${i})">Remove</button></div></div>`).join(''):'<div class="empty">No books waiting to print.</div>'; $('printBtn').disabled=!qbooks.length}
+window.removeQueue=i=>{queue.splice(i,1);save();renderQueue()};
+$('clearQueueBtn').onclick=()=>{if(confirm('Clear all books from the print queue? The saved inventory records will remain.')){queue=[];save();renderQueue()}};
+function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function renderInventory(){const q=val('search').toLowerCase();const list=books.filter(b=>[b.SKU,b.TITLE,b.AUTHOR,b.ISBN,b.PUBLISHER].join(' ').toLowerCase().includes(q)).slice().reverse();$('inventoryList').innerHTML=list.length?list.map(b=>`<div class="book-row"><div><div class="book-title">${esc(b.TITLE||'Untitled')}</div><div class="meta">${esc(b.SKU)} · ${esc(b.AUTHOR||'No author')} · ${esc(b.LOCATION||'No location')}</div></div><div class="row-actions"><button class="mini" onclick="requeue('${esc(b.SKU)}')">Queue</button></div></div>`).join(''):'<div class="empty">No matching books.</div>'}
+$('search').oninput=renderInventory;window.requeue=sku=>{if(queue.includes(sku))return alert('That book is already in the queue.');if(queue.length>=6)return alert('Print or clear the current six-card sheet first.');queue.push(sku);save();render();alert('Added to print queue.')};
+function csvCell(v){const s=String(v??'');return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
+$('exportBtn').onclick=()=>{const csv=[FIELDS.join(','),...books.map(b=>FIELDS.map(f=>csvCell(b[f])).join(','))].join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Vabulous_Inventory_${localDateParts().iso}.csv`;a.click();URL.revokeObjectURL(a.href)};
+$('eraseBtn').onclick=()=>{if(confirm('Erase all saved prototype inventory and queue data from this browser?')){books=[];queue=[];save();setSku();render()}};
+$('scanBtn').onclick=async()=>{if(!('BarcodeDetector' in window)){alert('Camera barcode scanning is not supported in this browser yet. Enter the ISBN manually for this prototype.');return}try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});const video=document.createElement('video');video.srcObject=stream;video.setAttribute('playsinline','');video.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:9999;background:black';document.body.appendChild(video);await video.play();const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});let done=false;const stop=()=>{done=true;stream.getTracks().forEach(t=>t.stop());video.remove()};video.onclick=stop;const scan=async()=>{if(done)return;const codes=await detector.detect(video);if(codes.length){$('isbn').value=codes[0].rawValue;stop();return}requestAnimationFrame(scan)};scan();setTimeout(()=>{if(!done){stop();alert('No barcode detected. Try entering the ISBN manually.')}},20000)}catch(e){alert('Camera access was unavailable. Enter the ISBN manually.') }};
+function fakeBars(text){let seed=0;for(const c of text)seed=(seed*31+c.charCodeAt(0))>>>0;let html='';for(let i=0;i<76;i++){seed=(1664525*seed+1013904223)>>>0;const w=1+(seed%3);const h=58+(seed%43);html+=`<span class="bar" style="width:${w}px;height:${h}%"></span>`}return html}
+function printCard(b){if(!b)return '<div class="print-card blank-card"></div>';const money=v=>v!==''&&v!=null?`$${Number(v).toFixed(2)}`:'—';return `<div class="print-card"><div class="pc-sku"><span>${esc(b.SKU)}</span><span>${esc(b.WEIGHT||'')}</span></div><div class="pc-title">${esc(b.TITLE||'Untitled')}</div><div class="pc-author">${esc(b.AUTHOR||'')}</div><div class="pc-line"><span class="pc-label">Publisher:</span> ${esc(b.PUBLISHER||'—')}</div><div class="pc-line"><span class="pc-label">Year / Edition:</span> ${esc([b.YEAR,b.EDITION].filter(Boolean).join(' · ')||'—')}</div><div class="pc-line"><span class="pc-label">Binding / Condition:</span> ${esc([b.BINDING,b.CONDITION].filter(Boolean).join(' · ')||'—')}</div><div class="pc-line"><span class="pc-label">DJ / Signed:</span> ${esc([b['DUST JACKET'],b.SIGNED].filter(Boolean).join(' · ')||'—')}</div><div class="pc-line"><span class="pc-label">ISBN:</span> ${esc(b.ISBN||'—')} &nbsp; <span class="pc-label">Location:</span> ${esc(b.LOCATION||'—')}</div><div class="pc-line"><span class="pc-label">Purchase:</span> ${money(b['PURCHASE PRICE'])} &nbsp; <span class="pc-label">List:</span> ${money(b['LISTING PRICE'])}</div><div class="pc-notes"><span class="pc-label">Notes:</span> ${esc(b.NOTES||'')}</div><div class="pc-code">${fakeBars(b.SKU)}<div class="code-text">${esc(b.SKU)}</div></div></div>`}
+$('printBtn').onclick=()=>{const qbooks=queue.map(s=>books.find(b=>b.SKU===s)).filter(Boolean);$('printArea').innerHTML=Array.from({length:6},(_,i)=>printCard(qbooks[i])).join('');setTimeout(()=>window.print(),100)};
+window.addEventListener('afterprint',()=>{if(queue.length&&confirm('Did the sheet print correctly? Select OK to clear these cards from the queue.')){queue=[];save();renderQueue()}});
+function render(){renderQueue();renderInventory()}
+setSku();render();
+</script>
+</body>
+</html>
