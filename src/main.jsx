@@ -131,16 +131,18 @@ function App() {
       <section className="card print-controls"><div><h2>{queue.length === 6 ? 'Sheet ready' : `${queue.length} of 6 cards ready`}</h2><p>Print at 100% scale with margins and headers/footers turned off.</p></div><div><button onClick={printSheet} disabled={!queue.length}>Print Sheet</button><button className="secondary" onClick={clearQueue} disabled={!queue.length}>Clear Queue</button></div></section>
       <section className="print-sheet">{[0,1,2,3,4,5].map(i=>{const b=queue[i];return <div className="inventory-card" key={i}>{b?<>
         <div className="card-head"><strong>{b.sku}</strong><span>{formatWeight(b)}</span></div>
+        <div className="photo-numbers"><strong>Photo Numbers</strong><span>{[b.photoStart,b.photoEnd].filter(v=>v!==''&&v!=null).join('–')}</span></div>
         <h3>{b.title}</h3><div className="author">{b.author}</div>
         <dl>
           <div><dt>Publisher</dt><dd>{b.publisher}</dd></div>
           <div><dt>Year / Edition</dt><dd>{[b.year,b.edition].filter(Boolean).join(' · ')}</dd></div>
           <div><dt>Binding/Condition</dt><dd>{[b.binding,b.condition].filter(Boolean).join(' — ')}</dd></div>
+          <div><dt>Signed</dt><dd>{b.signed}</dd></div>
+          <div><dt>Platforms</dt><dd>{(b.platforms||[]).join(', ')}</dd></div>
           <div><dt>ISBN</dt><dd>{b.isbn}</dd></div>
           <div><dt>Location</dt><dd>{b.location}</dd></div>
           <div><dt>Purchase / List</dt><dd>{money(b.purchasePrice)} {b.purchasePrice&&b.listingPrice?' / ':''}{money(b.listingPrice)}</dd></div>
           <div><dt>Sold Price</dt><dd>{money(b.soldPrice)}</dd></div>
-          <div><dt>Photo Numbers</dt><dd>{[b.photoStart,b.photoEnd].filter(v=>v!==''&&v!=null).join('–')}</dd></div>
         </dl>
         {b.notes && <p className="notes">{b.notes}</p>}
       </>:<span className="blank">Blank card</span>}</div>})}</section>
