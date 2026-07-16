@@ -1,7 +1,1 @@
-/* Replace your existing src/styles.css with this temporary override */
-.card-head{font-size:10pt}
-.inventory-card h3{font-size:15pt}
-.author{font-size:11pt}
-.inventory-card dl{font-size:8.5pt}
-.notes{font-size:8pt}
-.photo-numbers{font-size:8.5pt}
+.inventory-card h3{font-size:14pt !important;}
