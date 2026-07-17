@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 
@@ -36,18 +36,16 @@ function highestSkuSequence(books, stamp) {
     return Number.isFinite(sequence) ? Math.max(highest, sequence) : highest;
   }, 0);
 }
-function nextSku(books) {
-  const stamp = dateStamp();
+function initialNextSequence(books, stamp = dateStamp()) {
   const counters = load(SKU_COUNTER_KEY, {});
-  const highestUsed = Math.max(highestSkuSequence(books, stamp), Number(counters[stamp]) || 0);
-  return `VB-${stamp}-${String(highestUsed + 1).padStart(3,'0')}`;
+  return Math.max(highestSkuSequence(books, stamp), Number(counters[stamp]) || 0) + 1;
 }
-function reserveNextSku(books) {
-  const stamp = dateStamp();
+function formatSku(stamp, sequence) {
+  return `VB-${stamp}-${String(sequence).padStart(3,'0')}`;
+}
+function persistUsedSequence(stamp, sequence) {
   const counters = load(SKU_COUNTER_KEY, {});
-  const nextSequence = Math.max(highestSkuSequence(books, stamp), Number(counters[stamp]) || 0) + 1;
-  save(SKU_COUNTER_KEY, {...counters, [stamp]: nextSequence});
-  return `VB-${stamp}-${String(nextSequence).padStart(3,'0')}`;
+  save(SKU_COUNTER_KEY, {...counters, [stamp]: Math.max(Number(counters[stamp]) || 0, sequence)});
 }
 function money(v){ return v !== '' && v != null ? `$${Number(v).toFixed(2)}` : ''; }
 function formatWeight(book) {
@@ -73,7 +71,10 @@ function App() {
   const [tab, setTab] = useState('add');
   const [query, setQuery] = useState('');
   const [form, setForm] = useState(emptyForm);
-  const sku = useMemo(() => nextSku(books), [books]);
+  const initialStamp = dateStamp();
+  const nextSequenceRef = useRef(initialNextSequence(books, initialStamp));
+  const skuStampRef = useRef(initialStamp);
+  const [sku, setSku] = useState(() => formatSku(initialStamp, nextSequenceRef.current));
 
   const update = (key, value) => setForm(current => ({...current, [key]:value}));
   const togglePlatform = platform => setForm(current => ({
@@ -86,8 +87,22 @@ function App() {
   function submit(e){
     e.preventDefault();
     if(!form.title.trim()) return alert('Please enter a title.');
-    const assignedSku = reserveNextSku(books);
-    const book = { ...form, id: crypto.randomUUID(), sku: assignedSku, timestamp: new Date().toISOString() };
+    const currentStamp = dateStamp();
+    if (skuStampRef.current !== currentStamp) {
+      skuStampRef.current = currentStamp;
+      nextSequenceRef.current = initialNextSequence(books, currentStamp);
+    }
+
+    // Reserve and advance the number synchronously before React re-renders.
+    // This prevents two consecutive saves on iPhone from receiving the same SKU.
+    const assignedSequence = nextSequenceRef.current;
+    const assignedSku = formatSku(currentStamp, assignedSequence);
+    persistUsedSequence(currentStamp, assignedSequence);
+    nextSequenceRef.current = assignedSequence + 1;
+    setSku(formatSku(currentStamp, nextSequenceRef.current));
+
+    const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const book = { ...form, id, sku: assignedSku, timestamp: new Date().toISOString() };
     const nextBooks = [book, ...books];
     const nextQueue = [...queue, book].slice(-6);
     setBooks(nextBooks); setQueue(nextQueue);
