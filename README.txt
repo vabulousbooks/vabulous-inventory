@@ -13,3 +13,9 @@ IMPORTANT
 - ISBN camera scanning depends on browser support for BarcodeDetector.
 - The printed cards are set to 4.25 in × 3.6667 in, six per US Letter page, with zero page margins.
 - In the print dialog, choose Actual Size / 100% scale and disable browser headers and footers.
+
+SKU FIX — July 2026
+- SKU numbers are reserved from a persistent daily counter.
+- Existing inventory is scanned for the highest number before assigning the next SKU.
+- Refreshing or reopening the app does not reset the daily counter.
+- The counter restarts at 001 on a new date.

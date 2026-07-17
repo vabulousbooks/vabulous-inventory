@@ -4,6 +4,7 @@ import './styles.css';
 
 const STORAGE_KEY = 'vabulous_inventory_books_v1';
 const QUEUE_KEY = 'vabulous_inventory_queue_v1';
+const SKU_COUNTER_KEY = 'vabulous_inventory_sku_counters_v1';
 
 const bindingOptions = [
   'Hardcover','Hardcover with Dust Jacket','Softcover / Paperback','Leather',
@@ -26,10 +27,27 @@ function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
 function dateStamp(d = new Date()) {
   return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
 }
+function highestSkuSequence(books, stamp) {
+  const prefix = `VB-${stamp}-`;
+  return books.reduce((highest, book) => {
+    const sku = String(book?.sku || '');
+    if (!sku.startsWith(prefix)) return highest;
+    const sequence = Number.parseInt(sku.slice(prefix.length), 10);
+    return Number.isFinite(sequence) ? Math.max(highest, sequence) : highest;
+  }, 0);
+}
 function nextSku(books) {
-  const prefix = `VB-${dateStamp()}-`;
-  const count = books.filter(b => b.sku?.startsWith(prefix)).length + 1;
-  return `${prefix}${String(count).padStart(3,'0')}`;
+  const stamp = dateStamp();
+  const counters = load(SKU_COUNTER_KEY, {});
+  const highestUsed = Math.max(highestSkuSequence(books, stamp), Number(counters[stamp]) || 0);
+  return `VB-${stamp}-${String(highestUsed + 1).padStart(3,'0')}`;
+}
+function reserveNextSku(books) {
+  const stamp = dateStamp();
+  const counters = load(SKU_COUNTER_KEY, {});
+  const nextSequence = Math.max(highestSkuSequence(books, stamp), Number(counters[stamp]) || 0) + 1;
+  save(SKU_COUNTER_KEY, {...counters, [stamp]: nextSequence});
+  return `VB-${stamp}-${String(nextSequence).padStart(3,'0')}`;
 }
 function money(v){ return v !== '' && v != null ? `$${Number(v).toFixed(2)}` : ''; }
 function formatWeight(book) {
@@ -68,7 +86,8 @@ function App() {
   function submit(e){
     e.preventDefault();
     if(!form.title.trim()) return alert('Please enter a title.');
-    const book = { ...form, id: crypto.randomUUID(), sku, timestamp: new Date().toISOString() };
+    const assignedSku = reserveNextSku(books);
+    const book = { ...form, id: crypto.randomUUID(), sku: assignedSku, timestamp: new Date().toISOString() };
     const nextBooks = [book, ...books];
     const nextQueue = [...queue, book].slice(-6);
     setBooks(nextBooks); setQueue(nextQueue);
