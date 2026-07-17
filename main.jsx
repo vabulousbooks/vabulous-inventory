@@ -122,10 +122,10 @@ function App() {
 
           <fieldset className="wide fieldset"><legend>Platforms</legend><div className="platform-grid">{platformOptions.map(platform=><label className="check-label" key={platform}><input type="checkbox" checked={form.platforms.includes(platform)} onChange={()=>togglePlatform(platform)} />{platform}</label>)}</div></fieldset>
 
+          <label>Date Listed<input type="date" value={form.dateListed} onChange={e=>update('dateListed',e.target.value)} /></label>
           <label>Purchase Price<input type="number" min="0" step="0.01" value={form.purchasePrice} onChange={e=>update('purchasePrice',e.target.value)} /></label>
           <label>Listing Price<input type="number" min="0" step="0.01" value={form.listingPrice} onChange={e=>update('listingPrice',e.target.value)} /></label>
           <label>Sold Price<input type="number" min="0" step="0.01" value={form.soldPrice} onChange={e=>update('soldPrice',e.target.value)} /></label>
-          <label>Date Listed<input type="date" value={form.dateListed} onChange={e=>update('dateListed',e.target.value)} /></label>
           <label>Beginning Photo Number<input inputMode="numeric" value={form.beginningPhotoNumber} onChange={e=>update('beginningPhotoNumber',e.target.value)} /></label>
           <label>Ending Photo Number<input inputMode="numeric" value={form.endingPhotoNumber} onChange={e=>update('endingPhotoNumber',e.target.value)} /></label>
           <label className="wide">Notes<textarea value={form.notes} onChange={e=>update('notes',e.target.value)} /></label>
