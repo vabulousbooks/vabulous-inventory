@@ -161,7 +161,7 @@ function App() {
   const [query, setQuery] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [selected, setSelected] = useState([]);
-
+  const [editingId, setEditingId] = useState(null);
   const sku = useMemo(() => nextSku(books), [books]);
 
   const update = (key, value) => {
@@ -175,31 +175,65 @@ function App() {
       return alert('Please enter a title.');
     }
 
-    const book = {
-      ...form,
-      id: crypto.randomUUID(),
-      sku,
-      timestamp: new Date().toISOString()
-    };
+    if (editingId) {
+  const updatedBooks = books.map(b =>
+    b.id === editingId
+      ? { ...b, ...form, id: b.id, sku: b.sku, timestamp: b.timestamp }
+      : b
+  );
 
-    const nextBooks = [book, ...books];
-    const nextQueue = [...queue, book].slice(-6);
+  const updatedQueue = queue.map(b =>
+    b.id === editingId
+      ? { ...b, ...form, id: b.id, sku: b.sku, timestamp: b.timestamp }
+      : b
+  );
 
-    setBooks(nextBooks);
-    setQueue(nextQueue);
+  setBooks(updatedBooks);
+  setQueue(updatedQueue);
 
-    save(STORAGE_KEY, nextBooks);
-    save(QUEUE_KEY, nextQueue);
+  save(STORAGE_KEY, updatedBooks);
+  save(QUEUE_KEY, updatedQueue);
 
-    setForm(emptyForm());
+  setForm(emptyForm());
+  setEditingId(null);
+  setTab('inventory');
 
-    if (nextQueue.length === 6) {
-      setTab('print');
-    } else {
-      alert(`${book.sku} saved. Print queue: ${nextQueue.length} of 6.`);
-    }
+  alert('Book updated.');
+  return;
+}
+
+const book = {
+  ...form,
+  id: crypto.randomUUID(),
+  sku,
+  timestamp: new Date().toISOString()
+};
+
+const nextBooks = [book, ...books];
+const nextQueue = [...queue, book].slice(-6);
+
+setBooks(nextBooks);
+setQueue(nextQueue);
+
+save(STORAGE_KEY, nextBooks);
+save(QUEUE_KEY, nextQueue);
+
+setForm(emptyForm());
+
+if (nextQueue.length === 6) {
+  setTab('print');
+} else {
+  alert(`${book.sku} saved. Print queue: ${nextQueue.length} of 6.`);
+}
   }
 
+  function editBook(book) {
+  setForm({ ...book });
+  setEditingId(book.id);
+  setTab('add');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+  
   function clearQueue() {
     setQueue([]);
     save(QUEUE_KEY, []);
@@ -536,8 +570,8 @@ function App() {
             </div>
 
             <button className="primary" type="submit">
-              Save Book
-            </button>
+  {editingId ? 'Update Book' : 'Save Book'}
+</button>
           </form>
         </main>
       )}
@@ -593,6 +627,7 @@ function App() {
                     Auction
                   </small>
             
+                  <button type="button" onClick={() => editBook(b)}>Edit</button>
                   <button type="button" onClick={() => deleteBook(b.id)}>Delete</button>
                 </article>
               ))
