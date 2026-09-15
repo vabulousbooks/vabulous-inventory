@@ -209,6 +209,18 @@ function App() {
     window.print();
   }
 
+  function deleteBook(id) {
+  if (!window.confirm('Delete this book from inventory? This cannot be undone.')) return;
+
+  const nextBooks = books.filter(book => book.id !== id);
+  const nextQueue = queue.filter(book => book.id !== id);
+
+  setBooks(nextBooks);
+  setQueue(nextQueue);
+  save(STORAGE_KEY, nextBooks);
+  save(QUEUE_KEY, nextQueue);
+}
+  
   function exportCsv() {
     const headers = [
       'TIMESTAMP',
