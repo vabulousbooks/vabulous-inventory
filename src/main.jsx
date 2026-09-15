@@ -592,6 +592,8 @@ function App() {
                     {' · '}
                     Auction
                   </small>
+            
+                  <button type="button" onClick={() => deleteBook(b.id)}>Delete</button>
                 </article>
               ))
             )}
