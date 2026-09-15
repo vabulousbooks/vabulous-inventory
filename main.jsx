@@ -182,8 +182,20 @@ function App() {
 
     {tab==='inventory' && <main>
       <section className="card toolbar"><input placeholder="Search title, author, ISBN, or SKU" value={query} onChange={e=>setQuery(e.target.value)} /><button onClick={exportCsv}>Export CSV</button></section>
-      <section className="list">{shown.length===0?<div className="card empty">No books saved yet.</div>:shown.map(b=><article className="card book" key={b.id}><strong>{b.title}</strong><span>{b.author}</span><small>{b.sku} · {b.location || 'No location'}</small><button type="button" onClick={()=>deleteBook(b.id)}>Delete</button></article>)}</section>
-    </main>}
+<section className="list">
+  {shown.length === 0 ? (
+    <div className="card empty">No books saved yet.</div>
+  ) : (
+    shown.map(b => (
+      <article className="card book" key={b.id}>
+        <strong>{b.title}</strong>
+        <span>{b.author}</span>
+        <small>{b.sku} · {b.location || 'No location'}</small>
+        <button type="button" onClick={() => deleteBook(b.id)}>Delete</button>
+      </article>
+    ))
+  )}
+</section>    </main>}
 
     {tab==='print' && <main>
       <section className="card print-controls"><div><h2>{queue.length === 6 ? 'Sheet ready' : `${queue.length} of 6 cards ready`}</h2><p>Print at 100% scale with margins and headers/footers turned off.</p></div><div><button onClick={printSheet} disabled={!queue.length}>Print Sheet</button><button className="secondary" onClick={clearQueue} disabled={!queue.length}>Clear Queue</button></div></section>
