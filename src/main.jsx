@@ -50,6 +50,8 @@ function emptyForm() {
     binding: '',
     whatnotSubcategory: 'Rare & Vintage Books',
     whatnotCondition: 'Very Good',
+    weightPounds: '',
+weightOunces: '',
     whatnotStartingBid: ''
   };
 }
@@ -476,29 +478,66 @@ if (nextQueue.length === 6) {
                     </select>
                   </label>
                 ) : (
-                  <label
-                    className={
-                      ['title', 'author', 'publisher'].includes(k)
-                        ? 'wide'
-                        : ''
-                    }
-                    key={k}
-                  >
-                    {label}
-                    {k === 'title' && ' *'}
-                    <input
-                      type={
-                        ['purchasePrice', 'listingPrice'].includes(k)
-                          ? 'number'
-                          : k === 'dateListed'
-                          ? 'date'
-                          : 'text'
-                      }
-                      step="0.01"
-                      value={form[k] || ''}
-                      onChange={e => update(k, e.target.value)}
-                    />
-                  </label>
+                  k === 'weight' ? (
+  <label key={k}>
+    Weight
+    <div style={{ display: 'flex', gap: '8px' }}>
+      <input
+        type="number"
+        min="0"
+        placeholder="Pounds"
+        value={form.weightPounds || ''}
+        onChange={e => {
+          const pounds = e.target.value;
+          setForm(f => ({
+            ...f,
+            weightPounds: pounds,
+            weight: (Number(pounds || 0) * 16) + Number(f.weightOunces || 0)
+          }));
+        }}
+      />
+      <input
+        type="number"
+        min="0"
+        max="15"
+        placeholder="Ounces"
+        value={form.weightOunces || ''}
+        onChange={e => {
+          const ounces = e.target.value;
+          setForm(f => ({
+            ...f,
+            weightOunces: ounces,
+            weight: (Number(f.weightPounds || 0) * 16) + Number(ounces || 0)
+          }));
+        }}
+      />
+    </div>
+  </label>
+) : (
+  <label
+    className={
+      ['title', 'author', 'publisher'].includes(k)
+        ? 'wide'
+        : ''
+    }
+    key={k}
+  >
+    {label}
+    {k === 'title' && ' *'}
+    <input
+      type={
+        ['purchasePrice', 'listingPrice'].includes(k)
+          ? 'number'
+          : k === 'dateListed'
+          ? 'date'
+          : 'text'
+      }
+      step="0.01"
+      value={form[k] || ''}
+      onChange={e => update(k, e.target.value)}
+    />
+  </label>
+)
                 )
               )}
             </div>
