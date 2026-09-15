@@ -113,6 +113,18 @@ function App() {
   }
   function clearQueue(){ setQueue([]); save(QUEUE_KEY,[]); }
   function printSheet(){ window.print(); }
+  
+  function deleteBook(id) {
+  if (!window.confirm('Delete this book from inventory? This cannot be undone.')) return;
+
+  const nextBooks = books.filter(book => book.id !== id);
+  const nextQueue = queue.filter(book => book.id !== id);
+
+  setBooks(nextBooks);
+  setQueue(nextQueue);
+  save(STORAGE_KEY, nextBooks);
+  save(QUEUE_KEY, nextQueue);
+}
   function exportCsv(){
     const headers = ['TIMESTAMP','SKU','ISBN','LOCATION','TITLE','AUTHOR','PUBLISHER','YEAR','EDITION','CONDITION','BINDING','SIGNED','SOURCE','WEIGHT','DATE LISTED','PLATFORMS','PURCHASE PRICE','LISTING PRICE','SOLD PRICE','BEGINNING PHOTO NUMBER','ENDING PHOTO NUMBER','NOTES'];
     const rows = books.map(b => [b.timestamp,b.sku,b.isbn,b.location,b.title,b.author,b.publisher,b.year,b.edition,b.condition,b.binding,b.signed,b.source,formatWeight(b),b.dateListed,(b.platforms||[]).join(', '),b.purchasePrice,b.listingPrice,b.soldPrice,b.beginningPhotoNumber,b.endingPhotoNumber,b.notes]);
