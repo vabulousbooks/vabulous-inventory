@@ -485,7 +485,7 @@ if (nextQueue.length === 6) {
       <input
         type="number"
         min="0"
-        placeholder="Pounds"
+        placeholder="Pounds (lb)"
         value={form.weightPounds || ''}
         onChange={e => {
           const pounds = e.target.value;
@@ -500,7 +500,7 @@ if (nextQueue.length === 6) {
         type="number"
         min="0"
         max="15"
-        placeholder="Ounces"
+        placeholder="Ounces (oz)"
         value={form.weightOunces || ''}
         onChange={e => {
           const ounces = e.target.value;
