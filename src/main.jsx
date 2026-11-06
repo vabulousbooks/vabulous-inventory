@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+import { isVoided, activeBooks, changeBookStatus, printableQueue } from './inventory-status.js';
+import { readBooks, nextInventorySku, persistBooks, validateBooks } from './inventory-storage.js';
 
 const STORAGE_KEY = 'vabulous_inventory_books_v1';
 const QUEUE_KEY = 'vabulous_inventory_queue_v1';
@@ -73,9 +75,8 @@ function dateStamp(d = new Date()) {
 }
 
 function nextSku(books) {
-  const prefix = `VB-${dateStamp()}-`;
-  const count = books.filter(b => b.sku?.startsWith(prefix)).length + 1;
-  return `${prefix}${String(count).padStart(3, '0')}`;
+  try { return nextInventorySku(localStorage, books, dateStamp()); }
+  catch { return 'Unavailable — storage needs attention'; }
 }
 
 function money(v) {
@@ -157,8 +158,40 @@ function getShippingProfile(weight) {
 }
 
 function App() {
-  const [books, setBooks] = useState(() => load(STORAGE_KEY, []));
-  const [queue, setQueue] = useState(() => load(QUEUE_KEY, []));
+  const [initial] = useState(() => {
+    try { return { books: readBooks(localStorage), raw: localStorage.getItem(STORAGE_KEY), error: '' }; }
+    catch (e) { return { books: [], raw: null, error: e.message }; }
+  });
+  const [books, setBooks] = useState(initial.books);
+  const [storageError, setStorageError] = useState(initial.error);
+  const expectedRaw = useRef(initial.raw);
+  function commitBooks(next) {
+    if (storageError) return false;
+    try { expectedRaw.current = persistBooks(localStorage, next, expectedRaw.current); return true; }
+    catch (e) { setStorageError(e.message); alert('Nothing further will be saved: ' + e.message); return false; }
+  }
+  function backupInventory() {
+    const blob = new Blob([JSON.stringify({ version: 1, books, savedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = `vabulous-backup-${Date.now()}.json`; a.click(); URL.revokeObjectURL(url);
+  }
+  async function restoreBackup(event) {
+    const file = event.target.files[0]; event.target.value = ''; if (!file) return;
+    try {
+      const incoming = validateBooks(JSON.parse(await file.text()).books);
+      const merged = [...books];
+      for (const book of incoming) {
+        const existing = merged.find(b => b.sku === book.sku || b.id === book.id);
+        if (existing && JSON.stringify(existing) !== JSON.stringify(book)) throw new Error(`Conflicting record ${book.sku}; no records imported.`);
+        if (!existing) merged.push(book);
+      }
+      if (!window.confirm(`Merge ${merged.length - books.length} records? Existing records will be kept. Download a backup first.`)) return;
+      if (commitBooks(merged)) { setBooks(merged); alert('Backup merged successfully.'); }
+    } catch (e) { alert(e.message); }
+  }
+  const [storedQueue, setQueue] = useState(() => load(QUEUE_KEY, []));
+  const queue = printableQueue(Array.isArray(storedQueue) ? storedQueue : [], books);
+  const [inventoryView, setInventoryView] = useState('active');
   const [tab, setTab] = useState('add');
   const [query, setQuery] = useState('');
   const [form, setForm] = useState(emptyForm);
@@ -173,6 +206,7 @@ function App() {
   function submit(e) {
     e.preventDefault();
 
+    if (storageError) return alert(storageError);
     if (!form.title?.trim()) {
       return alert('Please enter a title.');
     }
@@ -190,10 +224,11 @@ function App() {
       : b
   );
 
+  if (!commitBooks(updatedBooks)) return;
   setBooks(updatedBooks);
   setQueue(updatedQueue);
 
-  save(STORAGE_KEY, updatedBooks);
+
   save(QUEUE_KEY, updatedQueue);
 
   setForm(emptyForm());
@@ -207,17 +242,18 @@ function App() {
 const book = {
   ...form,
   id: crypto.randomUUID(),
-  sku,
+  sku: nextInventorySku(localStorage, books, dateStamp()),
   timestamp: new Date().toISOString()
 };
 
 const nextBooks = [book, ...books];
 const nextQueue = [...queue, book].slice(-6);
 
+if (!commitBooks(nextBooks)) return;
 setBooks(nextBooks);
 setQueue(nextQueue);
 
-save(STORAGE_KEY, nextBooks);
+
 save(QUEUE_KEY, nextQueue);
 
 setForm(emptyForm());
@@ -245,18 +281,21 @@ if (nextQueue.length === 6) {
     window.print();
   }
 
-  function deleteBook(id) {
-  if (!window.confirm('Delete this book from inventory? This cannot be undone.')) return;
+  function setBookStatus(book) {
+    const status = isVoided(book) ? 'active' : 'void';
+    const message = status === 'void'
+      ? `Void ${book.sku}? Its record and SKU will be kept. It will be removed from sales exports and the print queue.`
+      : `Restore ${book.sku} to active inventory with the same SKU?`;
+    if (!window.confirm(message)) return;
+    const nextBooks = changeBookStatus(books, book.id, status);
+    if (!commitBooks(nextBooks)) return;
+    setBooks(nextBooks);
+    setSelected(current => current.filter(id => id !== book.id));
+    const nextQueue = printableQueue(queue, nextBooks);
+    setQueue(nextQueue);
+    try { save(QUEUE_KEY, nextQueue); } catch { alert('Book status saved. Print queue could not be saved.'); }
+  }
 
-  const nextBooks = books.filter(book => book.id !== id);
-  const nextQueue = queue.filter(book => book.id !== id);
-
-  setBooks(nextBooks);
-  setQueue(nextQueue);
-  save(STORAGE_KEY, nextBooks);
-  save(QUEUE_KEY, nextQueue);
-}
-  
   function exportCsv() {
     const headers = [
       'TIMESTAMP',
@@ -282,7 +321,7 @@ if (nextQueue.length === 6) {
       'DATE SOLD',
       'PROFIT',
       'DAYS TO SELL',
-      'NOTES'
+      'NOTES', 'STATUS', 'STATUS HISTORY'
     ];
 
     const rows = books.map(b => [
@@ -309,7 +348,7 @@ if (nextQueue.length === 6) {
       '',
       '',
       '',
-      b.notes
+      b.notes, isVoided(b) ? 'VOID' : 'ACTIVE', JSON.stringify(b.statusHistory || [])
     ]);
 
     downloadCsv(
@@ -328,7 +367,7 @@ if (nextQueue.length === 6) {
   }
 
   function selectAllShown() {
-    const shownIds = shown.map(b => b.id);
+    const shownIds = activeBooks(shown).map(b => b.id);
     const allShownSelected =
       shownIds.length > 0 &&
       shownIds.every(id => selected.includes(id));
@@ -345,7 +384,7 @@ if (nextQueue.length === 6) {
   }
 
   function exportWhatnotCsv() {
-    const chosen = books.filter(b => selected.includes(b.id));
+    const chosen = activeBooks(books).filter(b => selected.includes(b.id));
 
     if (!chosen.length) {
       return alert('Select at least one book to export to Whatnot.');
@@ -406,7 +445,7 @@ if (nextQueue.length === 6) {
     );
   }
 
-  const shown = books.filter(b =>
+  const shown = books.filter(b => (inventoryView === 'void' ? isVoided(b) : !isVoided(b))).filter(b =>
     `${b.sku} ${b.title} ${b.author} ${b.isbn}`
       .toLowerCase()
       .includes(query.toLowerCase())
@@ -417,11 +456,16 @@ if (nextQueue.length === 6) {
       <header>
         <div>
           <h1>Vabulous Inventory</h1>
-          <p>Book inventory prototype</p>
+          <p>Inventory saved in this browser. Download backups to keep copies outside Firefox.</p>
         </div>
         <div className="badge">Queue {queue.length}/6</div>
       </header>
 
+      {storageError && <section className="card" role="alert"><strong>Saving stopped: {storageError}</strong><p>Your stored data has not been replaced. Preserve it before attempting recovery.</p></section>}
+      <section className="card toolbar">
+        <button onClick={backupInventory} disabled={!!initial.error}>Download Full Backup</button>
+        <label>Merge Full Backup <input type="file" accept=".json" disabled={!!storageError} onChange={restoreBackup} /></label>
+      </section>
       <nav>
         <button
           className={tab === 'add' ? 'active' : ''}
@@ -618,6 +662,10 @@ if (nextQueue.length === 6) {
       {tab === 'inventory' && (
         <main>
           <section className="card toolbar">
+            <label>Show <select value={inventoryView} onChange={e => { setInventoryView(e.target.value); setSelected([]); }}>
+              <option value="active">Active ({activeBooks(books).length})</option>
+              <option value="void">Voided ({books.filter(isVoided).length})</option>
+            </select></label>
             <input
               placeholder="Search title, author, ISBN, or SKU"
               value={query}
@@ -640,18 +688,19 @@ if (nextQueue.length === 6) {
           <section className="list">
             {shown.length === 0 ? (
               <div className="card empty">
-                No books saved yet.
+                No books in this view.
               </div>
             ) : (
               shown.map(b => (
                 <article className="card book" key={b.id}>
                   <input
                     type="checkbox"
+                    disabled={isVoided(b)}
                     checked={selected.includes(b.id)}
                     onChange={() => toggleSelected(b.id)}
                   />
 
-                  <strong>{b.title}</strong>
+                  <strong>{isVoided(b) ? 'VOID — ' : ''}{b.title}</strong>
                   <span>{b.author}</span>
 
                   <small>
@@ -666,8 +715,9 @@ if (nextQueue.length === 6) {
                     Auction
                   </small>
             
-                  <button type="button" onClick={() => editBook(b)}>Edit</button>
-                  <button type="button" onClick={() => deleteBook(b.id)}>Delete</button>
+                  <button type="button" disabled={isVoided(b)} onClick={() => editBook(b)}>Edit</button>
+                  <button type="button" onClick={() => setBookStatus(b)}>{isVoided(b) ? 'Restore' : 'Void'}</button>
+                  {(b.statusHistory || []).map((entry, index) => <small key={index}>{entry.status === 'void' ? 'Voided' : 'Restored'}: {new Date(entry.at).toLocaleString()}</small>)}
                 </article>
               ))
             )}
