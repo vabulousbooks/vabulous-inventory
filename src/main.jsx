@@ -175,20 +175,92 @@ function App() {
     const url = URL.createObjectURL(blob), a = document.createElement('a');
     a.href = url; a.download = `vabulous-backup-${Date.now()}.json`; a.click(); URL.revokeObjectURL(url);
   }
-  async function restoreBackup(event) {
-    const file = event.target.files[0]; event.target.value = ''; if (!file) return;
-    try {
-      const incoming = validateBooks(JSON.parse(await file.text()).books);
-      const merged = [...books];
-      for (const book of incoming) {
-        const existing = merged.find(b => b.sku === book.sku || b.id === book.id);
-        if (existing && JSON.stringify(existing) !== JSON.stringify(book)) throw new Error(`Conflicting record ${book.sku}; no records imported.`);
-        if (!existing) merged.push(book);
+ 
+async function restoreBackup(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+
+  try {
+    const incoming = validateBooks(JSON.parse(await file.text()).books);
+    const merged = [...books];
+
+    const naturalHistoryId = '89db1971-650c-42ed-bde9-e4d22d795ac3';
+    const oldSku = 'VB-20261105-001';
+    const newSku = 'VB-20261105-006';
+
+    const existingIndex = merged.findIndex(
+      b => b.id === naturalHistoryId
+    );
+
+    const recoveredNaturalHistory = incoming.find(
+      b => b.id === naturalHistoryId
+    );
+
+    if (existingIndex === -1 || !recoveredNaturalHistory) {
+  throw new Error(
+    'Natural History record missing. No records imported.'
+  );
+}
+
+if (existingIndex !== -1 && recoveredNaturalHistory) {
+      const existing = merged[existingIndex];
+
+      if (
+        existing.sku !== oldSku ||
+        existing.status !== 'void' ||
+        existing.title !==
+          'THE STANDARD LIBRARY OF NATURAL HISTORY - 5 VOLUMES' ||
+        recoveredNaturalHistory.sku !== newSku ||
+        recoveredNaturalHistory.status !== 'active' ||
+        recoveredNaturalHistory.title !== existing.title
+      ) {
+        throw new Error(
+          'Natural History record does not match expected values. No records imported.'
+        );
       }
-      if (!window.confirm(`Merge ${merged.length - books.length} records? Existing records will be kept. Download a backup first.`)) return;
-      if (commitBooks(merged)) { setBooks(merged); alert('Backup merged successfully.'); }
-    } catch (e) { alert(e.message); }
+
+      merged[existingIndex] = recoveredNaturalHistory;
+    }
+
+    for (const book of incoming) {
+      const existing = merged.find(
+        b => b.sku === book.sku || b.id === book.id
+      );
+
+      if (
+        existing &&
+        JSON.stringify(existing) !== JSON.stringify(book)
+      ) {
+        throw new Error(
+          `Conflicting record ${book.sku}; no records imported.`
+        );
+      }
+
+      if (!existing) merged.push(book);
+    }
+
+    validateBooks(merged);
+
+    if (
+      !window.confirm(
+        `Merge ${merged.length - books.length} records? ` +
+        `Final inventory: ${merged.length} records. ` +
+        `Existing records will be kept except for the ` +
+        `approved Natural History correction. ` +
+        `Download a backup first.`
+      )
+    ) return;
+
+    if (commitBooks(merged)) {
+      setBooks(merged);
+      alert('Backup merged successfully.');
+    }
+  } catch (e) {
+    alert(e.message);
   }
+}
+
   const [storedQueue, setQueue] = useState(() => load(QUEUE_KEY, []));
   const queue = printableQueue(Array.isArray(storedQueue) ? storedQueue : [], books);
   const [inventoryView, setInventoryView] = useState('active');
