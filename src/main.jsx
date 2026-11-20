@@ -197,13 +197,10 @@ async function restoreBackup(event) {
       b => b.id === naturalHistoryId
     );
 
-    if (existingIndex === -1 || !recoveredNaturalHistory) {
-  throw new Error(
-    'Natural History record missing. No records imported.'
-  );
-}
+        const correctingNaturalHistory =
+      recoveredNaturalHistory && merged[existingIndex]?.sku === oldSku;
 
-if (existingIndex !== -1 && recoveredNaturalHistory) {
+    if (correctingNaturalHistory) {
       const existing = merged[existingIndex];
 
       if (
@@ -244,10 +241,11 @@ if (existingIndex !== -1 && recoveredNaturalHistory) {
 
     if (
       !window.confirm(
-        `Merge ${merged.length - books.length} records? ` +
+               `Merge ${merged.length - books.length} records? ` +
         `Final inventory: ${merged.length} records. ` +
-        `Existing records will be kept except for the ` +
-        `approved Natural History correction. ` +
+        (correctingNaturalHistory
+          ? `Existing records will be kept except for the approved Natural History correction. `
+          : `Existing records will be kept. `) +
         `Download a backup first.`
       )
     ) return;
